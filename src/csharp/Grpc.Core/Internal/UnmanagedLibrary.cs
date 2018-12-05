@@ -66,6 +66,7 @@ namespace Grpc.Core.Internal
         /// <returns></returns>
         public IntPtr LoadSymbol(string symbolName)
         {
+#if UNITY_EDITOR || UNITY_STANDALONE_WIN
             if (PlatformApis.IsWindows)
             {
                 // See http://stackoverflow.com/questions/10473310 for background on this.
@@ -92,6 +93,8 @@ namespace Grpc.Core.Internal
                     return IntPtr.Zero;
                 }
             }
+#endif
+#if UNITY_EDITOR || UNITY_STANDALONE_LINUX
             if (PlatformApis.IsLinux)
             {
                 if (PlatformApis.IsMono)
@@ -104,10 +107,13 @@ namespace Grpc.Core.Internal
                 }
                 return Linux.dlsym(this.handle, symbolName);
             }
+#endif
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX
             if (PlatformApis.IsMacOSX)
             {
                 return MacOSX.dlsym(this.handle, symbolName);
             }
+#endif
             throw new InvalidOperationException("Unsupported platform.");
         }
 
@@ -131,10 +137,13 @@ namespace Grpc.Core.Internal
         /// </summary>
         private static IntPtr PlatformSpecificLoadLibrary(string libraryPath)
         {
+#if UNITY_EDITOR || UNITY_STANDALONE_WIN
             if (PlatformApis.IsWindows)
             {
                 return Windows.LoadLibrary(libraryPath);
             }
+#endif
+#if UNITY_EDITOR || UNITY_STANDALONE_LINUX
             if (PlatformApis.IsLinux)
             {
                 if (PlatformApis.IsMono)
@@ -147,10 +156,13 @@ namespace Grpc.Core.Internal
                 }
                 return Linux.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
             }
+#endif
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX
             if (PlatformApis.IsMacOSX)
             {
                 return MacOSX.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
             }
+#endif
             throw new InvalidOperationException("Unsupported platform.");
         }
 
@@ -169,6 +181,7 @@ namespace Grpc.Core.Internal
                     string.Join(",", libraryPathAlternatives)));
         }
 
+#if UNITY_EDITOR || UNITY_STANDALONE_WIN
         private static class Windows
         {
             [DllImport("kernel32.dll")]
@@ -177,7 +190,8 @@ namespace Grpc.Core.Internal
             [DllImport("kernel32.dll")]
             internal static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
         }
-
+#endif
+#if UNITY_EDITOR || UNITY_STANDALONE_LINUX
         private static class Linux
         {
             [DllImport("libdl.so")]
@@ -186,7 +200,8 @@ namespace Grpc.Core.Internal
             [DllImport("libdl.so")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
         }
-
+#endif
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX
         private static class MacOSX
         {
             [DllImport("libSystem.dylib")]
@@ -195,6 +210,7 @@ namespace Grpc.Core.Internal
             [DllImport("libSystem.dylib")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
         }
+#endif
 
         /// <summary>
         /// On Linux systems, using using dlopen and dlsym results in
@@ -203,6 +219,7 @@ namespace Grpc.Core.Internal
         /// dlopen and dlsym from the current process as on Linux
         /// Mono sure is linked against these symbols.
         /// </summary>
+#if UNITY_EDITOR || UNITY_STANDALONE_LINUX
         private static class Mono
         {
             [DllImport("__Internal")]
@@ -211,12 +228,14 @@ namespace Grpc.Core.Internal
             [DllImport("__Internal")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
         }
+#endif
 
         /// <summary>
         /// Similarly as for Mono on Linux, we load symbols for
         /// dlopen and dlsym from the "libcoreclr.so",
         /// to avoid the dependency on libc-dev Linux.
         /// </summary>
+#if UNITY_EDITOR || UNITY_STANDALONE_LINUX
         private static class CoreCLR
         {
             [DllImport("libcoreclr.so")]
@@ -225,5 +244,6 @@ namespace Grpc.Core.Internal
             [DllImport("libcoreclr.so")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
         }
+#endif
     }
 }
